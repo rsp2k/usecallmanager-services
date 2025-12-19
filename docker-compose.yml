@@ -1,0 +1,37 @@
+services:
+  services:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME:-usecallmanager}-services
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - SERVICES_HOST=0.0.0.0
+      - SERVICES_PORT=6972
+      - SERVICES_RELOAD=${DEV_MODE:-false}
+    volumes:
+      - reports:/var/log/cisco
+      - ./config.yml:/app/config.yml:ro
+      - ./phone_help.xml:/app/phone_help.xml:ro
+    networks:
+      - caddy
+      - default
+    labels:
+      caddy: ${SERVICES_DOMAIN:-services.local}
+      caddy.reverse_proxy: "{{upstreams 6972}}"
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./src
+          target: /app/.venv/lib/python3.12/site-packages/usecallmanager_services
+        - action: rebuild
+          path: pyproject.toml
+
+volumes:
+  reports:
+
+networks:
+  caddy:
+    external: true

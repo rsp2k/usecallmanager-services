@@ -1,0 +1,82 @@
+[project]
+name = "usecallmanager-services"
+version = "2024.12.19"
+description = "XML services for Cisco IP phones with Asterisk Manager integration"
+readme = "README.md"
+license = "GPL-2.0-only"
+authors = [
+    {name = "Ryan Malloy", email = "ryan@supported.systems"},
+]
+requires-python = ">=3.11"
+keywords = ["cisco", "ip-phone", "xml-services", "asterisk", "voip"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: FastAPI",
+    "Intended Audience :: Telecommunications Industry",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: Telephony",
+]
+dependencies = [
+    "fastapi>=0.125.0",
+    "uvicorn[standard]>=0.38.0",
+    "httpx>=0.28.1",
+    "lxml>=5.3.0",
+    "pydantic-settings>=2.12.0",
+    "pyyaml>=6.0.2",
+    "python-multipart>=0.0.18",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.4",
+]
+
+[project.scripts]
+usecallmanager-services = "usecallmanager_services.__main__:main"
+
+[project.urls]
+Homepage = "https://usecallmanager.nz/phone-services.html"
+Repository = "https://github.com/usecallmanagernz/services"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/usecallmanager_services"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "ARG001", # unused function argument (common in FastAPI dependencies)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["usecallmanager_services"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
