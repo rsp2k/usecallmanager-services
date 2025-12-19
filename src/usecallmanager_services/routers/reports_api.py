@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from ..dependencies import AppSettings
 
-router = APIRouter(prefix="/api/reports", tags=["reports-api"])
+router = APIRouter(prefix="/reports", tags=["reports-api"])
 
 
 def parse_timestamp_from_filename(filename: str) -> datetime | None:
