@@ -1,86 +1,117 @@
-[![Python Lint](https://img.shields.io/github/actions/workflow/status/usecallmanagernz/services/pylint.yml?branch=master&label=python%20lint)](https://github.com/usecallmanagernz/services/actions/workflows/pylint.yml) [![Version](https://img.shields.io/github/v/tag/usecallmanagernz/services?color=blue&label=version&sort=semver)](https://github.com/usecallmanagernz/services/releases) [![Licence](https://img.shields.io/github/license/usecallmanagernz/services?color=red)](https://github.com/usecallmanagernz/services/blob/master/LICENSE)
+[![Python Lint](https://img.shields.io/github/actions/workflow/status/rsp2k/usecallmanager-services/lint.yml?branch=master&label=lint)](https://github.com/rsp2k/usecallmanager-services/actions/workflows/lint.yml) [![Version](https://img.shields.io/github/v/tag/rsp2k/usecallmanager-services?color=blue&label=version&sort=semver)](https://github.com/rsp2k/usecallmanager-services/releases) [![License](https://img.shields.io/github/license/rsp2k/usecallmanager-services?color=red)](https://github.com/rsp2k/usecallmanager-services/blob/master/LICENSE)
 
-# XML Services
+# Cisco IP Phone XML Services
 
-This repository contains example phone XML services as a WSGI application
-written in Python/Flask.
+FastAPI application providing XML services for Cisco IP phones (7900/7800/8800 series). Integrates with Asterisk Manager Interface for voicemail directory and parked calls.
 
-Endpoints provided are:
+## Endpoints
 
-* `/authentication` - Authentication for CGI/Execute requests to the phone.
-* `/services` - Simple menu that can show the currently parked calls.
-* `/directory` - Local directory that uses voicemail.conf.
-* `/directory/79xx` - 7900 series need MenuItem before loading /directory.
-* `/information` - 7900 series Info button phone help.
-* `/problem-report` - 7800 and 8800 series problem report upload.
-* `/quality-report` - Record information when QRT in selected.
+### Phone XML Endpoints
 
-Settings for the application are loaded from `config.yml`, the location of
-this file can be changed by setting the `SERVICES_CONFIG` environment
-variable.
+| Endpoint | Purpose |
+|----------|---------|
+| `/authentication` | CGI/Execute request authentication |
+| `/services` | Services menu with parked calls |
+| `/directory` | Local directory from voicemail.conf |
+| `/directory/79xx` | 7900 series menu wrapper |
+| `/information` | 7900 series Info button help |
+| `/quality-report` | QRT reason selection and logging |
+| `/problem-report` | PRT file upload (POST) |
 
-Additional settings for Flask can be specified in the `FLASK_CONFIG`
-environment variable.
+### Web Interface
 
-See [Phone Services](https://usecallmanager.nz/phone-services.html) for
-more information.
+| Endpoint | Purpose |
+|----------|---------|
+| `/` | Landing page |
+| `/directory-ui` | Directory browser with search and export |
+| `/reports` | Quality and problem reports viewer |
+| `/docs` | Swagger API documentation |
 
-## Requirements
+### JSON API
 
-The following non-standard Python modules are required: `requests` and `Flask`.
+| Endpoint | Purpose |
+|----------|---------|
+| `/directory/list` | Directory entries with search/pagination |
+| `/directory/stats` | Entry counts and letter distribution |
+| `/directory/export` | CSV and vCard export |
+| `/reports/summary` | Report statistics |
+| `/reports/quality` | Quality report data |
+| `/reports/problem` | Problem report files |
 
-You can use the packages provided by your OS distribution or run
-`sudo pip3 install -r requirements.txt` to satisfy those dependancies.
+## Quick Start with Docker
 
-## Installation
+```bash
+# Clone and configure
+git clone https://github.com/rsp2k/usecallmanager-services.git
+cd usecallmanager-services
+cp .env.example .env
 
-The following commands are for Apache on Ubuntu, you may need to adjust some
-them for a different distributions.
-
-Copy files and create a virtual-host for services via HTTP:
-
-```
-sudo mkdir -p /var/www/services
-sudo cp *.py *.wsgi /var/www/services
-sudo cp virtualhost.conf /etc/apache2/sites-available/xml-services
-sudo a2ensite xml-services
-```
-
-Optionally, to enable secure services virtual-host via HTTPS.
-
-```
-sudo cp virtualhost-ssl.conf /etc/apache2/sites-available/secure-xml-services
-sudo a2ensite secure-xml-services
+# Edit .env with your settings
+# Start the service
+make prod
 ```
 
-Restart apache.
+The service will be available via your Caddy reverse proxy at the configured domain.
 
+## Configuration
+
+Configuration uses environment variables (with `SERVICES_` prefix) or `config.yml`:
+
+| Environment Variable | config.yml Key | Description |
+|---------------------|----------------|-------------|
+| `SERVICES_REPORTS_DIR` | `reports-dir` | Log storage path (default: `/var/log/cisco`) |
+| `SERVICES_CGI_USERNAME` | `cgi-username` | Phone CGI authentication username |
+| `SERVICES_CGI_PASSWORD` | `cgi-password` | Phone CGI authentication password |
+| `SERVICES_MANAGER_URL` | `manager-url` | Asterisk Manager HTTP endpoint |
+| `SERVICES_MANAGER_USERNAME` | `manager-username` | AMI username |
+| `SERVICES_MANAGER_SECRET` | `manager-secret` | AMI password |
+
+## Development
+
+Requires [uv](https://docs.astral.sh/uv/) for Python package management.
+
+```bash
+# Install dependencies
+uv sync --dev
+
+# Run development server (hot-reload)
+SERVICES_RELOAD=true uv run usecallmanager-services
+
+# Lint and format
+uv run ruff check src tests
+uv run ruff format src tests
+
+# Run tests
+uv run pytest tests/ -v
 ```
-sudo systemctl restart apache2
+
+### Docker Development
+
+```bash
+# Development mode with hot-reload
+make dev
+
+# View logs
+make logs
+
+# Rebuild after changes
+make rebuild
 ```
 
-See [HTTP Provisioning](https://usecallmanager.nz/http-provisioning.html#XML-Services)
-for more information.
+## Asterisk Configuration
 
-The Asterisk Manager web interface also needs to be enabled in
-`/etc/asterisk/manager.conf` and a user added with the credentials from `config.yml`.
+Enable the Asterisk Manager web interface in `/etc/asterisk/manager.conf`:
 
-```
+```ini
 [general]
-...
 enabled=yes
 webenabled=yes
 
-[asterisk]
-secret=asterisk
+[your-username]
+secret=your-secret
 read=all
-...
 ```
 
-Create a directory to store quality and problem report logs. A different path
-may be specified in `config.yml`.
+## Documentation
 
-```
-mkdir /var/log/cisco
-chown www-data:www-data /var/log/cisco
-```
+See [Phone Services](https://usecallmanager.nz/phone-services.html) for detailed setup instructions.
